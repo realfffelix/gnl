@@ -6,7 +6,7 @@
 /*   By: fdubois <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/13 15:14:45 by fdubois           #+#    #+#             */
-/*   Updated: 2018/11/14 17:21:37 by fdubois          ###   ########.fr       */
+/*   Updated: 2018/11/14 17:54:14 by fdubois          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,15 +84,18 @@ static char	*get_prepend(t_fdl **head, int fd)
 		{
 			if (!(prepend = ft_strsub(ptr->str, ptr->offset, ft_strclen((ptr->str + ptr->offset), '\n'))))
 				return (NULL);
-			printf("\n |1:  %s, %zu |\n", (ptr->str + ptr->offset), ptr->offset);
-			ptr->offset += ft_strclen((ptr->str + ptr->offset), '\n');
-			printf("\n |2:  %s, %zu |\n", (ptr->str + ptr->offset), ptr->offset);
+	//		printf("\n |1:  %s, %zu |\n", (ptr->str + ptr->offset), ptr->offset);
+			ptr->offset += ft_strclen((ptr->str + ptr->offset), '\n') + 1;
+	//		printf("\n |2:  %s, %zu |\n", (ptr->str + ptr->offset), ptr->offset);
 			return (prepend);
 		}
 		else
 		{
 			if (!(prepend = ft_strsub(ptr->str, ptr->offset, ft_strclen((ptr->str + ptr->offset), '\0'))))
 				return (NULL);
+		//	printf("\n |1:  %s, %zu |\n", (ptr->str + ptr->offset), ptr->offset);
+			ptr->offset += ft_strclen((ptr->str + ptr->offset), '\n') + 1;
+		//	printf("\n |2:  %s, %zu |\n", (ptr->str + ptr->offset), ptr->offset);
 			ft_fdldel(head, fd);
 			return (prepend);
 		}
@@ -104,7 +107,7 @@ int	get_next_line(const int fd, char **line)
 {
 	char	buffer[BUFF_SIZE + 1];
 	static t_fdl	*list;
-	t_fdl	*new;
+	t_fdl	*ptr;
 	int readval;
 	char	*prepend;
 
@@ -116,8 +119,13 @@ int	get_next_line(const int fd, char **line)
 		if (!(*line = ft_strjoinfr(*line, prepend)))
 			return (-1);
 		free(prepend);
-//		if (ft_strchr(*line, '\n'))
-//			return (1);
+		ptr = list;
+		while (ptr != NULL)
+		{
+			if ((int)ptr->fd == fd)
+				return (1);
+			ptr = ptr->next;
+		}
 	}
 	if (fd < 0 || (readval = read(fd, &buffer, BUFF_SIZE)) < 0 || line == NULL)
 		return (-1);
@@ -125,19 +133,19 @@ int	get_next_line(const int fd, char **line)
 	{
 		if (ft_strchr(buffer, '\n') == NULL)
 		{
-			buffer[BUFF_SIZE] = '\0';
+			buffer[readval] = '\0';
 			if (!(*line = ft_strjoinfr(*line, buffer)))
 				return (-1);
 			//		readval = read(fd, &buffer, BUFF_SIZE);
 		}
 		if (ft_strchr(buffer, '\n'))
 		{
-			buffer[BUFF_SIZE] = '\0';
+			buffer[readval] = '\0';
 			*(ft_strchr(buffer, '\n')) = '\0';
 			if (!(*line = ft_strjoinfr(*line, buffer)))
 				return (-1);
 			*(ft_strchr(buffer, '\0')) = '\n';
-			if (!(new = ft_fdlnew(&list, (ft_strchr(buffer, '\n') + 1), fd)))
+			if (!(ptr = ft_fdlnew(&list, (ft_strchr(buffer, '\n') + 1), fd)))
 				return (-1);
 			return (1);
 		}
